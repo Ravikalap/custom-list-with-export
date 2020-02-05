@@ -237,15 +237,24 @@ EXPORT_FIELD_LIST:
         return deferred.promise;
     },
 
+    _getExportColumns: function(){
+        var grid = this.down('rallygridboard').getGridOrBoard();
+        if (grid){
+            return _.filter(grid.columns, function(item){ return (item.dataIndex && item.dataIndex != "DragAndDropRank"); });
+        }
+        return [];
+    },
+
     //Entry point for export
     _exportCSV: function(rs) {
-        Ext.create("Niks.Apps.TreeExporter").exportCSV(gApp._createTree(gApp._nodes));
+        Ext.create("Niks.Apps.TreeExporter", {
+            fields: _.pluck(gApp._getExportColumns(), "dataIndex")
+        }).exportCSV(gApp._createTree(gApp._nodes));
         gApp.setLoading(false);
     },
 
     launch: function() {
         gApp = this;
-        gApp._nodes = [ gApp.WorldViewNode ];
         
         var loadModels = [];
         loadModels.push(gApp._getUserStoryModel);
@@ -499,6 +508,7 @@ EXPORT_FIELD_LIST:
     },
 
     _getGridArtifacts: function() {
+        gApp._nodes = [ gApp.WorldViewNode ];
         gApp.setLoading('Fetching hierarchical data');
         gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
     },

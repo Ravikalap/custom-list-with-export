@@ -149,7 +149,7 @@ Ext.define("Niks.Apps.TreeExporter", {
         var textOut = '';
         var valid = true;
         var fieldRow = '';
-        var specialFields = ['Attachments'];    //Dealt with individually below
+        var specialFields = ['Attachments', 'FormattedID', 'Name'];    //Dealt with individually in this code
 
         var printFields = _.filter(this.fields, function(field) {
             return !(_.contains(specialFields, field));
