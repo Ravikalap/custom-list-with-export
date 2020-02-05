@@ -6,7 +6,7 @@ Ext.define('Niks.Apps.listExporter.app', {
     componentCls: 'app',
 
     integrationHeaders : {
-        name : "niks-apps-radial-density"
+        name : "niks-apps-list-with-csv-export"
     },
     
     config: {
