@@ -6,7 +6,8 @@
     "javascript": [
         "App.js",
         "exporter.js",
-        "worker.js"
+        "worker.js",
+        "d3.js"
     ],
     "css": [
         "app.css"

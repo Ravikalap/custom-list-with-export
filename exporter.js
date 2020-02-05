@@ -2,11 +2,6 @@ Ext.define("Niks.Apps.TreeExporter", {
     //dateFormat : 'Y-m-d g:i',
     dateFormat : 'Y-m-d',
 
-    inheritableStatics: {
-        XmlFileHeader: '<?xml version="1.0"?>',
-        XmlFileExtension: '.xml.txt'
-    },
-
     config: {
     },
 

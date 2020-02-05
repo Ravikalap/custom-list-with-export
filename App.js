@@ -15,9 +15,6 @@ Ext.define('Niks.Apps.listExporter.app', {
             includeDefects: false,
             includeTasks: false,
             includeTestCases: false,
-            usePreliminaryEstimate: true,
-            hideArchived: false,
-            sizeStoriesByPlanEstimate: false,
             sortSize: false
         }
     },
@@ -127,12 +124,6 @@ EXPORT_FIELD_LIST:
     getSettingsFields: function() {
         var returned = [
             {
-                name: 'hideArchived',
-                xtype: 'rallycheckboxfield',
-                fieldLabel: 'Do not show archived',
-                labelALign: 'middle'
-            },
-            {
                 name: 'includeStories',
                 xtype: 'rallycheckboxfield',
                 fieldLabel: 'Include User Stories in Export',
@@ -161,36 +152,6 @@ EXPORT_FIELD_LIST:
     },
 
     timer: null,
-    
-    _redrawTree: function() {
-        if (gApp.down('#loadingBox')) { gApp.down('#loadingBox').destroy();}
-        clearTimeout(gApp.timer);
-        if (gApp._nodeTree) {
-            _.each(gApp._nodeTree.descendants(),
-                function(d) { 
-                    if (d.card) {
-                        d.card.destroy();
-                    }
-                }
-            );
-            d3.select("#tree").remove();
-            d3.select("#depsOverlay").remove();
-            gApp._nodeTree = null;
-        }
-        gApp._enterMainApp();
-    },
-
-    _enterMainApp: function() {
-
-        //Timer can fire before we retrieve anything
-        if (!gApp._nodes.length) { return;}
-
-       //Get all the nodes and the "Unknown" parent virtual nodes
-       var nodetree = gApp._createTree(gApp._nodes);
-       gApp._nodeTree = nodetree;
-
-        gApp._refreshTree(viewBoxSize);    //Need to redraw if things are added
-    },
 
     _getUserStoryModel: function() {
         var deferred = Ext.create('Deft.Deferred');
@@ -278,89 +239,70 @@ EXPORT_FIELD_LIST:
 
     //Entry point for export
     _exportCSV: function(rs) {
-
-            Rally.data.ModelFactory.getModel({
-                type: 'TestCase',
-                context: {
-                    workspace: gApp.getContext().getWorkspace()
-                },
-                success: function(model) {
-                    gApp._testCaseModel = model;
-                    _.each(model.getField('LastVerdict').attributeDefinition.AllowedValues, function(value,idx) {
-                        gApp._tcStates.push( { name: value.StringValue, value : idx});
-                    });
-                }
-            });
-
-    },
-
-    _loadStoreLocal: function() {
-        var ptype = gApp.down('#piType');
-        Ext.create('Rally.data.wsapi.Store', {
-            model: 'portfolioitem/' + ptype.rawValue.toLowerCase(),
-            autoLoad: true,
-            fetch: gApp.STORE_FETCH_FIELD_LIST,
-            pageSize: 2000,
-            limit: Infinity,
-            sorters: [
-                {
-                    property: 'DragAndDropRank',
-                    direction: 'ASC'
-                }
-            ],
-            listeners: {
-                load: function( store, records, success) {
-                    gApp._nodes = [ gApp.WorldViewNode ];
-                    if (records.length > 0) {
-                        gApp.setLoading("Loading artefacts....");
-                        gApp._getArtifacts(records);
-                    }
-                    else {
-                        Rally.ui.notify.Notifier.show({message: 'No Artefacts to fetch'});
-                    }
-                }
-            }
-        });
+        debugger;
+        Ext.create("Niks.Apps.TreeExporter").exportCSV(gApp._createTree(gApp._nodes));
+        gApp.setLoading(false);
     },
 
     launch: function() {
         gApp = this;
-                //Add any useful selectors into this container 
-        //Choose a point when all are 'ready' to jump off into the rest of the app
-        this.add ({
-            xtype: 'container',
-            itemId: 'displayBox',
-            items: [
-                { 
+        gApp._nodes = [ gApp.WorldViewNode ];
+        
+        var loadModels = [];
+        loadModels.push(gApp._getUserStoryModel);
+        loadModels.push(gApp._getDefectModel);
+        loadModels.push(gApp._getTaskModel);
+        loadModels.push(gApp._getTestCaseModel);
+        loadModels.push(gApp._getUserStoryModel);
+        
+        Deft.Chain.parallel(loadModels).then ({
+            success: function () {
+                //Choose a point when all are 'ready' to jump off into the rest of the app
+                gApp.add ({
                     xtype: 'container',
-                    itemId: 'headerBox',
-                    layout: 'hbox',
+                    itemId: 'displayBox',
                     items: [
-                        {
-                            xtype:  'rallyportfolioitemtypecombobox',
-                            itemId: 'piType',
-                            fieldLabel: 'Choose Portfolio Type :',
-                            labelWidth: 150,
-                            allowClear: true,
-                            margin: '5 0 5 20',
-                            storeConfig: {
-                                fetch: ['DisplayName', 'ElementName','Ordinal','Name','TypePath', 'Attributes'],
-                                listeners: {
-                                    load: function(store) {
-                                        gApp._typeStore = store;
+                        { 
+                            xtype: 'container',
+                            itemId: 'headerBox',
+                            layout: 'hbox',
+                            items: [
+                                {
+                                    xtype:  'rallyportfolioitemtypecombobox',
+                                    itemId: 'piType',
+                                    fieldLabel: 'Choose Portfolio Type :',
+                                    labelWidth: 150,
+                                    allowClear: true,
+                                    margin: '5 0 5 20',
+                                    storeConfig: {
+                                        fetch: ['DisplayName', 'ElementName','Ordinal','Name','TypePath', 'Attributes'],
+                                        listeners: {
+                                            load: function(store,records) {
+                                                gApp._typeStore = store;
+                                                _.each(records, function(modeltype) {
+                                                    Rally.data.ModelFactory.getModel({
+                                                        type: modeltype.get('TypePath'),
+                                                        fetch: true,
+                                                        success: function(model) {
+                                                            gApp._portfolioItemModels[modeltype.get('ElementName')] = model;
+                                                        }
+                                                    });
+                                                });
+                                            }
+                                        }
+                                    },
+                                    listeners: {
+                                        select: function(box) {
+                                            gApp._piModelsValid(box.getRecord());
+                                        },
+                                        scope: gApp
                                     }
                                 }
-                            },
-                            listeners: {
-                                select: function(box) {
-                                    gApp._piModelsValid(box.getRecord());
-                                },
-                                scope: gApp
-                            }
+                            ]
                         }
                     ]
-                }
-            ]
+                });
+            }
         });
     },
 
@@ -379,6 +321,7 @@ EXPORT_FIELD_LIST:
     },
 
     _addGridboard: function(store, modelNames) {
+
         this.gridboard = gApp.down('#displayBox').add({
             xtype: 'rallygridboard',
             context: gApp.getContext(),
@@ -452,6 +395,10 @@ EXPORT_FIELD_LIST:
         });
     },
     
+    /** Threads can be Asleep or Busy. This state is only changed in the app not in the worker
+     * as a result of the messages coming back from the worker.
+     * 
+     */
     _threadCreate: function() {
 
         var workerScript = worker.toString();
@@ -482,13 +429,8 @@ EXPORT_FIELD_LIST:
         return thread.state;
     },
 
-    _wakeThread: function(thread) {
-        if ( gApp._checkThreadState(thread) === 'Asleep') {  
-            thread.lastMessage = 'wake';
-            thread.worker.postMessage({
-                command: thread.lastMessage
-            });
-        }
+    _setThreadState: function(thread, state) {
+        thread.state = state;
     },
 
     _checkThreadActivity: function() {
@@ -499,6 +441,7 @@ EXPORT_FIELD_LIST:
         _.each(gApp._runningThreads, function(thread) {
             if ((gApp._recordsToProcess.length > 0) && (thread.state === 'Asleep')) {
                 //Keep asking to process until their is somethng that needs doing
+                
                 gApp._processRecord(thread,gApp._recordsToProcess.pop());
             }
         });
@@ -506,7 +449,7 @@ EXPORT_FIELD_LIST:
     },
 
     _giveToThread: function(thread, msg){
-        thread.state = 'Busy';
+        gApp._setThreadState(thread, 'Busy');
         thread.worker.postMessage(msg);
     },
 
@@ -531,7 +474,7 @@ EXPORT_FIELD_LIST:
     },
 
     _getGridArtifacts: function() {
-debugger;
+        gApp.setLoading('Fetching hierarchical data');
         gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
     },
 
@@ -580,7 +523,7 @@ debugger;
             
         }
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
-        thread.state = 'Asleep';
+        gApp._setThreadState(thread, 'Asleep');
         //Farm out more if needed
         if (gApp._recordsToProcess.length > 0) {
             //We have some, so give to a thread
@@ -595,50 +538,11 @@ debugger;
 
     _allThreadsIdle: function() {
         return _.every(gApp._runningThreads, function(thread) {
-            return thread.state === 'Asleep';
+            return gApp._checkThreadState(thread) === 'Asleep';
         });
     },
 
     _nodeTree: null,
-
-    _refreshTree: function(viewBoxSize){
- 
-        //Might want to change this...
-        gApp._nodeTree.sum( function(d) {
-            var retval = 0;
-            if (d.record.data._ref) {
-                if (d.record.isPortfolioItem()){
-                    if ( gApp.getSetting('usePreliminaryEstimate')){
-                        retval = d.record.get('PreliminaryEstimateValue');
-                    } else {
-                        retval = d.record.get('LeafStoryCount'); 
-                    }
-                }else {
-                        //We are a User Story here
-                        if ( gApp.getSetting('sizeStoriesByPlanEstimate')){
-                            retval = d.record.get('PlanEstimate');
-                        }else {
-                            retval = d.record.get('DirectChildrenCount'); 
-                        }
-                    }
-                }
-            return retval ? retval : 1;
-        });
-
-        if ( gApp.getSetting('sortSize') ){
-            gApp._nodeTree.sort(function(a,b) { return b.value - a.value; });
-        }
-
-        var nodetree = partition(gApp._nodeTree);
-        var tree = d3.select('#tree');
-
-        var nodes = tree.selectAll("node")
-                .data(nodetree.descendants())
-                .enter();
-
-        gApp.setLoading(false);
-
-    },
 
     _createNodes: function(data) {
         //These need to be sorted into a hierarchy based on what we have. We are going to add 'other' nodes later
