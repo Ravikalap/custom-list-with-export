@@ -139,7 +139,7 @@ Ext.define("Niks.Apps.TreeExporter", {
                 smallString += ',' + (item.data.Attachments?item.data.Attachments.Size:0);
                 smallString += ',' + item.ChildAttachments.Size;
             }
-            console.log(smallString);
+            // console.log(smallString);
         }
         return smallString + '\n';
     },

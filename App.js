@@ -45,7 +45,7 @@ Ext.define('Niks.Apps.listExporter.app', {
     _taskStates: [],
     _tcStates: [],
     _piStates: [],
-
+    _outstanding: 0,
     _nodes: [],
 
     _recordsToProcess: [],
@@ -239,7 +239,6 @@ EXPORT_FIELD_LIST:
 
     //Entry point for export
     _exportCSV: function(rs) {
-        debugger;
         Ext.create("Niks.Apps.TreeExporter").exportCSV(gApp._createTree(gApp._nodes));
         gApp.setLoading(false);
     },
@@ -272,7 +271,6 @@ EXPORT_FIELD_LIST:
                                     itemId: 'piType',
                                     fieldLabel: 'Choose Portfolio Type :',
                                     labelWidth: 150,
-                                    allowClear: true,
                                     margin: '5 0 5 20',
                                     storeConfig: {
                                         fetch: ['DisplayName', 'ElementName','Ordinal','Name','TypePath', 'Attributes'],
@@ -322,7 +320,10 @@ EXPORT_FIELD_LIST:
 
     _addGridboard: function(store, modelNames) {
 
-        this.gridboard = gApp.down('#displayBox').add({
+        var grid = gApp.down('rallygridboard');
+        if (grid) { grid.destroy();}
+
+        gApp.down('#displayBox').add({
             xtype: 'rallygridboard',
             context: gApp.getContext(),
             modelNames: modelNames,
@@ -398,7 +399,20 @@ EXPORT_FIELD_LIST:
     /** Threads can be Asleep or Busy. This state is only changed in the app not in the worker
      * as a result of the messages coming back from the worker.
      * 
+     * Threads are a separate context, so we need to send a message back to the app to keep the counts
+     *  in sync
      */
+
+     listeners: {
+         rcvDataMessage: function() {
+             gApp._outstanding -= 1;
+         },
+         sndDataMessage: function(d) {
+             console.log('Requesting: ' + d);
+            gApp._outstanding += d;
+        }
+     },
+
     _threadCreate: function() {
 
         var workerScript = worker.toString();
@@ -470,7 +484,18 @@ EXPORT_FIELD_LIST:
                 Rally.util.Ref.getUrl(record.get('TestCases')._ref):null,
 
         };
-        gApp._giveToThread(thread, msg);    //Send a wakeup message with an item
+        var outstanding = 
+            (msg.hasChildren?1:0) + 
+            (msg.hasDefects?1:0) + 
+            (msg.hasStories?1:0) + 
+            (msg.hasTasks?1:0) + 
+            (msg.hasTestCases?1:0);
+
+        if (outstanding) {
+            gApp.fireEvent('sndDataMessage',outstanding);
+            gApp._giveToThread(thread, msg);    //Send a wakeup message with an item
+        }
+
     },
 
     _getGridArtifacts: function() {
@@ -492,6 +517,7 @@ EXPORT_FIELD_LIST:
         //Records come back as raw info. We need to make proper Rally.data.WSAPI.Store records out of them
         if (msg.data.reply === 'Data') {
             var records = [];
+            gApp.fireEvent('rcvDataMessage');
 
             _.each(msg.data.records, function(item) {
                 switch (item._type) {
@@ -522,6 +548,9 @@ EXPORT_FIELD_LIST:
 
             
         }
+        else {
+            console.log("Received: " + msg);
+        }
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
         gApp._setThreadState(thread, 'Asleep');
         //Farm out more if needed
@@ -537,7 +566,7 @@ EXPORT_FIELD_LIST:
     },
 
     _allThreadsIdle: function() {
-        return _.every(gApp._runningThreads, function(thread) {
+        return (gApp._outstanding === 0) && _.every(gApp._runningThreads, function(thread) {
             return gApp._checkThreadState(thread) === 'Asleep';
         });
     },

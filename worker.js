@@ -41,6 +41,7 @@ function worker() {
                 return;
 
         } else {
+            console.log("sending default response to: ", msg);
             defaultReply();
         }
     }
