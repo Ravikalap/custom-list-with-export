@@ -417,7 +417,6 @@ EXPORT_FIELD_LIST:
              gApp._outstanding -= 1;
          },
          sndDataMessage: function(d) {
-             console.log('Requesting: ' + d);
             gApp._outstanding += d;
         }
      },
@@ -558,9 +557,7 @@ EXPORT_FIELD_LIST:
 
             
         }
-        else {
-            console.log("Received: " + msg);
-        }
+
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
         gApp._setThreadState(thread, 'Asleep');
         //Farm out more if needed
