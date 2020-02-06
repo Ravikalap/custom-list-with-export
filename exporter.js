@@ -161,8 +161,18 @@ Ext.define("Niks.Apps.TreeExporter", {
         //First, let's generate the Column header row
 
         //The 'tree' item is the root item, but there is inconsistency in the types lower down Feature->Story->Defect or Feature->Story->Task
+        debugger;
+        var path = _.find( tree.descendants(), function(item) {
+            return item.depth === tree.height;
+        }).path(tree.children[0]);
+
         for ( i = 0; i < tree.height; i++ ) {
-            fieldRow += 'Ring ' + i + ',';
+            var title = path.pop().data.record.raw._type;
+            if ( title.startsWith('PortfolioItem/')){
+                title = title.replace('PortfolioItem/', '');
+            }
+            else { title = '';}
+            fieldRow += title + ',';
         }
 
         fieldRow += 'Name';  //Mandatory in exporter
