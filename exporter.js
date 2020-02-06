@@ -75,7 +75,26 @@ Ext.define("Niks.Apps.TreeExporter", {
         } /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
             text = '';
         } */ else {
+            var delimiter = ",",
+            rowDelimiter = "\r\n",
+            re = new RegExp(delimiter + '|\"|\r|\n','g'),
+            reHTML = new RegExp('<\/?[^>]+>', 'g'),
+            reNbsp = new RegExp('&nbsp;','ig');
+
             text = fieldData;
+            if (reHTML.test(text)){
+                text = fieldData.replace('<br>',rowDelimiter);
+                text = Ext.util.Format.htmlDecode(text);
+                text = Ext.util.Format.stripTags(text);
+            }
+            if (reNbsp.test(text)){
+                text = text.replace(reNbsp,' ');
+            }
+
+            if (re.test(text)){ //enclose in double quotes if we have the delimiters
+                text = text.replace(/\"/g,'\"\"');
+                text = Ext.String.format("\"{0}\"",text);
+            }
         }
 
         return text;
