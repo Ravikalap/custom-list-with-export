@@ -418,10 +418,18 @@ EXPORT_FIELD_LIST:
      */
 
      listeners: {
-         rcvDataMessage: function() {
+        rcvErrorMessage: function(msg) {
+            Rally.ui.notify.Notifier.showError({
+                message: msg.data.error + ' returned for children fetch on thread id: ' + msg.data.id
+            });
+            gApp._outstanding -= 1;
+        },
+        
+        rcvDataMessage: function() {
              gApp._outstanding -= 1;
-         },
-         sndDataMessage: function(d) {
+        },
+        
+        sndDataMessage: function(d) {
             gApp._outstanding += d;
         }
      },
@@ -563,9 +571,7 @@ EXPORT_FIELD_LIST:
             
         }
         else if ((msg.data.error !== '')) {
-            Rally.ui.notify.Notifier.showError({
-                message: msg.data.error + ' returned for children fetch on thread id: ' + msg.data.id
-            });
+            gApp.fireEvent('rcvErrorMessage', msg);
         }
 
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
