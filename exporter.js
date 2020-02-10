@@ -29,7 +29,7 @@ Ext.define("Niks.Apps.TreeExporter", {
     exportCSV: function(tree) {
         var data = this._getCSV(tree);
         // fix: ' character was causing termination of csv file
-        data = data.replace(/\'/g, "");
+        data = data.replace(/\'/g, " ");
         this._downloadFiles(
             [
                 'export.csv', 'data:text/csv;charset=utf8', data
@@ -40,10 +40,10 @@ Ext.define("Niks.Apps.TreeExporter", {
 
     _XMLIndent: function(index, tag, leaf, data) {
         var text = '\n';
-        for (var i = 0; i < index; i++) text += '\t';
+        for (var i = 0; i < index; i++) { text += '\t'; }
         text += '<' + tag + '>';
         text += data;
-        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) text += '\t';}
+        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) {text += '\t';}}
         text += '</' + tag + '>';
         return text;
 
@@ -164,9 +164,7 @@ Ext.define("Niks.Apps.TreeExporter", {
     },
 
     _getCSV: function (tree) {
-        var hdrData    = [];
         var textOut = '';
-        var valid = true;
         var fieldRow = '';
         var specialFields = ['Attachments', 'FormattedID', 'Name'];    //Dealt with individually in this code
 
@@ -175,16 +173,16 @@ Ext.define("Niks.Apps.TreeExporter", {
         });
 
         var that = this;
-        if (!tree) return;  //If user clicks export before the tree is ready.....
+        if (!tree) { return; }  //If user clicks export before the tree is ready.....
 
         //First, let's generate the Column header row
 
         //The 'tree' item is the root item, but there is inconsistency in the types lower down Feature->Story->Defect or Feature->Story->Task
-        debugger;
         var path = _.find( tree.descendants(), function(item) {
             return item.depth === tree.height;
         }).path(tree.children[0]);
 
+        var i = 0;
         for ( i = 0; i < tree.height; i++ ) {
             var title = path.pop().data.record.raw._type;
             if ( title.startsWith('PortfolioItem/')){
@@ -218,10 +216,11 @@ Ext.define("Niks.Apps.TreeExporter", {
 
             textOut += "," + tree.ChildAttachments.Count + ',' + tree.ChildAttachments.Size + '\n';
         }
-        if (textOut.length > 0)
-        return fieldRow + textOut;
-//        return textOut;
-        else
+        if (textOut.length > 0) {
+            return fieldRow + textOut;
+        }
+        else {
             return null;
+        }
     }
 });

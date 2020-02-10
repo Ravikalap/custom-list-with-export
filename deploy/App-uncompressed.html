@@ -9,7 +9,7 @@
         Rally.onReady(function () {
                 (function () {
     var Ext = window.Ext4 || window.Ext;
-
+    var gApp;
 Ext.define('Niks.Apps.listExporter.app', {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -126,10 +126,6 @@ EXPORT_FIELD_LIST:
 
     ],
 
-    onSettingsUpdate: function(newSettings) {
-//            gApp._loadStoreLocal();
-    },
-
     getSettingsFields: function() {
         var returned = [
             {
@@ -176,7 +172,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -197,7 +193,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -218,7 +214,7 @@ EXPORT_FIELD_LIST:
             });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -239,7 +235,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -249,13 +245,13 @@ EXPORT_FIELD_LIST:
     _getExportColumns: function(){
         var grid = this.down('rallygridboard').getGridOrBoard();
         if (grid){
-            return _.filter(grid.columns, function(item){ return (item.dataIndex && item.dataIndex != "DragAndDropRank"); });
+            return _.filter(grid.columns, function(item){ return (item.dataIndex && item.dataIndex !== "DragAndDropRank"); });
         }
         return [];
     },
 
     //Entry point for export
-    _exportCSV: function(rs) {
+    _exportCSV: function() {
         Ext.create("Niks.Apps.TreeExporter", {
             fields: _.pluck(gApp._getExportColumns(), "dataIndex")
         }).exportCSV(gApp._createTree(gApp._nodes));
@@ -566,6 +562,11 @@ EXPORT_FIELD_LIST:
 
             
         }
+        else if ((msg.data.error !== '')) {
+            Rally.ui.notify.Notifier.showError({
+                message: msg.data.error + ' returned for children fetch on thread id: ' + msg.data.id
+            });
+        }
 
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
         gApp._setThreadState(thread, 'Asleep');
@@ -762,7 +763,7 @@ EXPORT_FIELD_LIST:
     exportCSV: function(tree) {
         var data = this._getCSV(tree);
         // fix: ' character was causing termination of csv file
-        data = data.replace(/\'/g, "");
+        data = data.replace(/\'/g, " ");
         this._downloadFiles(
             [
                 'export.csv', 'data:text/csv;charset=utf8', data
@@ -773,10 +774,10 @@ EXPORT_FIELD_LIST:
 
     _XMLIndent: function(index, tag, leaf, data) {
         var text = '\n';
-        for (var i = 0; i < index; i++) text += '\t';
+        for (var i = 0; i < index; i++) { text += '\t'; }
         text += '<' + tag + '>';
         text += data;
-        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) text += '\t';}
+        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) {text += '\t';}}
         text += '</' + tag + '>';
         return text;
 
@@ -897,9 +898,7 @@ EXPORT_FIELD_LIST:
     },
 
     _getCSV: function (tree) {
-        var hdrData    = [];
         var textOut = '';
-        var valid = true;
         var fieldRow = '';
         var specialFields = ['Attachments', 'FormattedID', 'Name'];    //Dealt with individually in this code
 
@@ -908,16 +907,16 @@ EXPORT_FIELD_LIST:
         });
 
         var that = this;
-        if (!tree) return;  //If user clicks export before the tree is ready.....
+        if (!tree) { return; }  //If user clicks export before the tree is ready.....
 
         //First, let's generate the Column header row
 
         //The 'tree' item is the root item, but there is inconsistency in the types lower down Feature->Story->Defect or Feature->Story->Task
-        debugger;
         var path = _.find( tree.descendants(), function(item) {
             return item.depth === tree.height;
         }).path(tree.children[0]);
 
+        var i = 0;
         for ( i = 0; i < tree.height; i++ ) {
             var title = path.pop().data.record.raw._type;
             if ( title.startsWith('PortfolioItem/')){
@@ -951,18 +950,19 @@ EXPORT_FIELD_LIST:
 
             textOut += "," + tree.ChildAttachments.Count + ',' + tree.ChildAttachments.Size + '\n';
         }
-        if (textOut.length > 0)
-        return fieldRow + textOut;
-//        return textOut;
-        else
+        if (textOut.length > 0) {
+            return fieldRow + textOut;
+        }
+        else {
             return null;
+        }
     }
 });
                 function worker() {
 
     var id = 0;
-    var currentState = 'Initiate';
-    var timeout = 120000;
+    var currentState = 'Initiate';      //Used during debug. Could remove.
+//    var timeout = 120000;               //Might use this in future to overide 30sec standard. See _getFromURL below
     var fetchFields = 'true';
 
 
@@ -974,7 +974,7 @@ EXPORT_FIELD_LIST:
                 break;
             } 
             case 'initialise': {
-                this.id = ev.data.id;
+                id = ev.data.id;
                 currentState = 'Asleep';
                 fetchFields = encodeURIComponent(ev.data.fields.toString());
                 defaultReply();
@@ -985,7 +985,7 @@ EXPORT_FIELD_LIST:
                 break;
             }
             default: {
-                console.log('Unknown message received by thread: ', this.id);
+                console.log('Unknown message received by thread: ', id);
                 break;
             }
         }
@@ -1008,7 +1008,10 @@ EXPORT_FIELD_LIST:
 
     function _getFromURL(url) {
         var getReq = new XMLHttpRequest();
-        getReq.onreadystatechange = _successHandler;
+        getReq.onloadend = _loadHandler;
+        getReq.onabort = _abortHandler;
+        getReq.ontimeout = _timeoutHandler;
+//        getReq.timeout = timeout;
         getReq.withCredentials = true;
         currentState = 'Reading';
         getReq.open("GET", url + '?fetch=' + fetchFields, true);
@@ -1016,19 +1019,47 @@ EXPORT_FIELD_LIST:
         return true;
     }
 
-    function _successHandler(event) {
+    function _loadHandler(event) {
         if ((this.readyState === 4) && (this.status === 200)){
             _dataReply(JSON.parse(this.responseText).QueryResult.Results);
             currentState = 'Asleep';
         }
+        else if ((this.readyState === 4) && (this.status === 0)){
+            _errorReply('Non Specified Fail');
+            currentState = 'Asleep';
+            console.log('Fail Response', event);
+            }
+        else {
+            console.log('Non Data Response', event);
+        }
+    }
+    function _abortHandler(event) {
+        _errorReply('Abort');
+        currentState = 'Asleep';
+        console.log('Abort Response', event);
+    }
+    function _timeoutHandler(event) {
+        _errorReply('Timeout');
+        currentState = 'Asleep';
+        console.log('Timeout Response', event);
     }
 
     function _dataReply(data) {
         postMessage( {
             response: 'Alive',
             reply: 'Data',
+            error: '',
             records: data,
-            id: this.id
+            id: id
+        });
+    }
+
+    function _errorReply(msg) {
+        postMessage( {
+            response: 'Alive',
+            reply: '',
+            error: msg,
+            id: id
         });
     }
 
@@ -1036,7 +1067,8 @@ EXPORT_FIELD_LIST:
         postMessage({
             response: 'Alive',
             reply: this.currentState,
-            id: this.id
+            error: '',
+            id: id
         });
     }
 }

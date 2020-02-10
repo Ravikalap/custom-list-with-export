@@ -1,6 +1,6 @@
 (function () {
     var Ext = window.Ext4 || window.Ext;
-
+    var gApp;
 Ext.define('Niks.Apps.listExporter.app', {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -117,10 +117,6 @@ EXPORT_FIELD_LIST:
 
     ],
 
-    onSettingsUpdate: function(newSettings) {
-//            gApp._loadStoreLocal();
-    },
-
     getSettingsFields: function() {
         var returned = [
             {
@@ -167,7 +163,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -188,7 +184,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -209,7 +205,7 @@ EXPORT_FIELD_LIST:
             });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -230,7 +226,7 @@ EXPORT_FIELD_LIST:
                 });
                 deferred.resolve(model);
             },
-            failure: function(e) {
+            failure: function() {
                 deferred.reject(null);
             }
         });
@@ -240,13 +236,13 @@ EXPORT_FIELD_LIST:
     _getExportColumns: function(){
         var grid = this.down('rallygridboard').getGridOrBoard();
         if (grid){
-            return _.filter(grid.columns, function(item){ return (item.dataIndex && item.dataIndex != "DragAndDropRank"); });
+            return _.filter(grid.columns, function(item){ return (item.dataIndex && item.dataIndex !== "DragAndDropRank"); });
         }
         return [];
     },
 
     //Entry point for export
-    _exportCSV: function(rs) {
+    _exportCSV: function() {
         Ext.create("Niks.Apps.TreeExporter", {
             fields: _.pluck(gApp._getExportColumns(), "dataIndex")
         }).exportCSV(gApp._createTree(gApp._nodes));
@@ -556,6 +552,11 @@ EXPORT_FIELD_LIST:
             gApp._getArtifacts(records);
 
             
+        }
+        else if ((msg.data.error !== '')) {
+            Rally.ui.notify.Notifier.showError({
+                message: msg.data.error + ' returned for children fetch on thread id: ' + msg.data.id
+            });
         }
 
         var thread = _.find(gApp._runningThreads, { id: msg.data.id});
