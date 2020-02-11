@@ -180,8 +180,8 @@ Ext.define("Niks.Apps.TreeExporter", {
         //The 'tree' item is the root item, but there is inconsistency in the types lower down Feature->Story->Defect or Feature->Story->Task
         var path = _.find( tree.descendants(), function(item) {
             return item.depth === tree.height;
-        }).path(tree.children[0]);
-
+        }).path(tree);
+        path.pop(); //Get rid of R0
         var i = 0;
         console.log('About to pop from: ', tree);
         for ( i = 0; i < tree.height; i++ ) {
