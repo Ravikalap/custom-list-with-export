@@ -183,8 +183,11 @@ Ext.define("Niks.Apps.TreeExporter", {
         }).path(tree.children[0]);
 
         var i = 0;
+        console.log('About to pop from: ', tree);
         for ( i = 0; i < tree.height; i++ ) {
-            var title = path.pop().data.record.raw._type;
+            var pathItem = path.pop();
+            console.log('Path level: ' + pathItem.height, 'Name: ' + pathItem.id, 'Record: ',pathItem.data.record);
+            var title = pathItem.data.record.raw._type;
             if ( title.startsWith('PortfolioItem/')){
                 title = title.replace('PortfolioItem/', '');
             }

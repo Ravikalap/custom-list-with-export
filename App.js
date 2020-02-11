@@ -512,8 +512,14 @@ EXPORT_FIELD_LIST:
 
     _getGridArtifacts: function() {
         gApp._nodes = [ gApp.WorldViewNode ];
-        gApp.setLoading('Fetching hierarchical data');
-        gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
+        var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
+        if (topLevelNodes.length > 0) {
+            gApp.setLoading('Fetching hierarchical data');
+            gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
+        }
+        else {
+            Rally.ui.notify.Notifier.showWarning({ message: 'Empty Grid. Nothing to Export'});
+        }
     },
 
     _getArtifacts: function(records) {

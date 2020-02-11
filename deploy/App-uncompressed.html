@@ -521,8 +521,14 @@ EXPORT_FIELD_LIST:
 
     _getGridArtifacts: function() {
         gApp._nodes = [ gApp.WorldViewNode ];
-        gApp.setLoading('Fetching hierarchical data');
-        gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
+        var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
+        if (topLevelNodes.length > 0) {
+            gApp.setLoading('Fetching hierarchical data');
+            gApp._getArtifacts(gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes());
+        }
+        else {
+            Rally.ui.notify.Notifier.showWarning({ message: 'Empty Grid. Nothing to Export'});
+        }
     },
 
     _getArtifacts: function(records) {
@@ -923,8 +929,11 @@ EXPORT_FIELD_LIST:
         }).path(tree.children[0]);
 
         var i = 0;
+        console.log('About to pop from: ', tree);
         for ( i = 0; i < tree.height; i++ ) {
-            var title = path.pop().data.record.raw._type;
+            var pathItem = path.pop();
+            console.log('Path level: ' + pathItem.height, 'Name: ' + pathItem.id, 'Record: ',pathItem.data.record);
+            var title = pathItem.data.record.raw._type;
             if ( title.startsWith('PortfolioItem/')){
                 title = title.replace('PortfolioItem/', '');
             }
