@@ -60,12 +60,14 @@ Ext.define('Niks.Apps.listExporter.app', {
         'Blocked',
         'Children',
         'Defects',
+        'Description',
         'DisplayColor',
         'DragAndDropRank',
         'FormattedID',
         'Iteration',
         'LastVerdict',
         'Name',
+        'Notes',
         'ObjectID',
         'OrderIndex', 
         'Ordinal',
@@ -243,8 +245,10 @@ EXPORT_FIELD_LIST:
 
     //Entry point for export
     _exportCSV: function() {
+        var fields = _.pluck(gApp._getExportColumns(), "dataIndex");
+        console.log('Exporting fields: ', fields);
         Ext.create("Niks.Apps.TreeExporter", {
-            fields: _.pluck(gApp._getExportColumns(), "dataIndex")
+            fields: fields
         }).exportCSV(gApp._createTree(gApp._nodes));
         gApp.setLoading(false);
     },
@@ -444,10 +448,11 @@ EXPORT_FIELD_LIST:
         
         gApp._runningThreads.push(thread);
         wrkr.onmessage = gApp._threadMessage;
+        var requiredFields = gApp.STORE_FETCH_FIELD_LIST.concat( gApp._getModelFromOrd(0).split("/").pop());
         gApp._giveToThread(thread, {
             command: 'initialise',
             id: thread.id,
-            fields: gApp.STORE_FETCH_FIELD_LIST.concat([gApp._getModelFromOrd(0).split("/").pop()])
+            fields: _.uniq(_.pluck(gApp._getExportColumns(), "dataIndex").concat(requiredFields))
         });
     },
 
