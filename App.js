@@ -443,18 +443,24 @@ EXPORT_FIELD_LIST:
             lastCommand: '',
             worker: wrkr,
             state: 'Initiate',
-            id: ++gApp._lastThreadID,
+            id: ++gApp._lastThreadID,   //Done this way and we can check if a thread dies and another restarted
         };
         
         gApp._runningThreads.push(thread);
         wrkr.onmessage = gApp._threadMessage;
+        gApp._initialiseThread(thread);
+    },
+
+    _initialiseThread: function(thread)  {
         var requiredFields = gApp.STORE_FETCH_FIELD_LIST.concat( gApp._getModelFromOrd(0).split("/").pop());
         gApp._giveToThread(thread, {
             command: 'initialise',
             id: thread.id,
             fields: _.uniq(_.pluck(gApp._getExportColumns(), "dataIndex").concat(requiredFields))
         });
+
     },
+
 
     _checkThreadState: function(thread) {
         return thread.state;
@@ -516,6 +522,11 @@ EXPORT_FIELD_LIST:
     },
 
     _getGridArtifacts: function() {
+
+        //Initialise threads with any new parameters
+        _.each(gApp._runningThreads, function (thread) {
+            gApp._initialiseThread(thread);
+        });
         gApp._nodes = [ gApp.WorldViewNode ];
         var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
         if (topLevelNodes.length > 0) {

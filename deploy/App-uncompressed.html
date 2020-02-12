@@ -452,18 +452,24 @@ EXPORT_FIELD_LIST:
             lastCommand: '',
             worker: wrkr,
             state: 'Initiate',
-            id: ++gApp._lastThreadID,
+            id: ++gApp._lastThreadID,   //Done this way and we can check if a thread dies and another restarted
         };
         
         gApp._runningThreads.push(thread);
         wrkr.onmessage = gApp._threadMessage;
+        gApp._initialiseThread(thread);
+    },
+
+    _initialiseThread: function(thread)  {
         var requiredFields = gApp.STORE_FETCH_FIELD_LIST.concat( gApp._getModelFromOrd(0).split("/").pop());
         gApp._giveToThread(thread, {
             command: 'initialise',
             id: thread.id,
             fields: _.uniq(_.pluck(gApp._getExportColumns(), "dataIndex").concat(requiredFields))
         });
+
     },
+
 
     _checkThreadState: function(thread) {
         return thread.state;
@@ -525,6 +531,11 @@ EXPORT_FIELD_LIST:
     },
 
     _getGridArtifacts: function() {
+
+        //Initialise threads with any new parameters
+        _.each(gApp._runningThreads, function (thread) {
+            gApp._initialiseThread(thread);
+        });
         gApp._nodes = [ gApp.WorldViewNode ];
         var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
         if (topLevelNodes.length > 0) {
@@ -909,7 +920,6 @@ EXPORT_FIELD_LIST:
                 smallString += ',' + (item.data.Attachments?item.data.Attachments.Size:0);
                 smallString += ',' + item.ChildAttachments.Size;
             }
-            // console.log(smallString);
         }
         return smallString + '\n';
     },
@@ -934,7 +944,6 @@ EXPORT_FIELD_LIST:
         }).path(tree);
         path.pop(); //Get rid of R0
         var i = 0;
-        console.log('About to pop from: ', tree);
         for ( i = 0; i < tree.height; i++ ) {
             var pathItem = path.pop();
             console.log('Path level: ' + pathItem.height, 'Name: ' + pathItem.id, 'Record: ',pathItem.data.record);
@@ -997,6 +1006,7 @@ EXPORT_FIELD_LIST:
                 id = ev.data.id;
                 currentState = 'Asleep';
                 fetchFields = encodeURIComponent(ev.data.fields.toString());
+                console.log("Thread Initialise: " + id + ', Fields: ' + fetchFields);
                 defaultReply();
                 break;
             } 

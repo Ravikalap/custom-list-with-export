@@ -17,6 +17,7 @@ function worker() {
                 id = ev.data.id;
                 currentState = 'Asleep';
                 fetchFields = encodeURIComponent(ev.data.fields.toString());
+                console.log("Thread Initialise: " + id + ', Fields: ' + fetchFields);
                 defaultReply();
                 break;
             } 

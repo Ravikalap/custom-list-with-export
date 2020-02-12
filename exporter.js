@@ -158,7 +158,6 @@ Ext.define("Niks.Apps.TreeExporter", {
                 smallString += ',' + (item.data.Attachments?item.data.Attachments.Size:0);
                 smallString += ',' + item.ChildAttachments.Size;
             }
-            // console.log(smallString);
         }
         return smallString + '\n';
     },
@@ -183,7 +182,6 @@ Ext.define("Niks.Apps.TreeExporter", {
         }).path(tree);
         path.pop(); //Get rid of R0
         var i = 0;
-        console.log('About to pop from: ', tree);
         for ( i = 0; i < tree.height; i++ ) {
             var pathItem = path.pop();
             console.log('Path level: ' + pathItem.height, 'Name: ' + pathItem.id, 'Record: ',pathItem.data.record);
