@@ -2,7 +2,7 @@ function worker() {
 
     var id = 0;
     var currentState = 'Initiate';      //Used during debug. Could remove.
-//    var timeout = 120000;               //Might use this in future to overide 30sec standard. See _getFromURL below
+    var timeout = 120000;               //Might use this in future to overide 30sec standard. See _getFromURL below
     var fetchFields = 'true';
 
 
@@ -34,11 +34,11 @@ function worker() {
 
     function _actionFetchChildren(msg) {
         if (
-            ((msg.hasChildren !== null) && _getFromURL(msg.hasChildren)) +
-            ((msg.hasStories !== null) && _getFromURL(msg.hasStories)) +
-            ((msg.hasDefects !== null) && _getFromURL(msg.hasDefects)) +
-            ((msg.hasTasks !== null) && _getFromURL(msg.hasTasks)) +
-            ((msg.hasTestCases !== null) && _getFromURL(msg.hasTestCases)) ) {
+            ((msg.hasChildren !== undefined) && _getFromURL(msg.hasChildren)) +
+            ((msg.hasStories !== undefined) && _getFromURL(msg.hasStories)) +
+            ((msg.hasDefects !== undefined) && _getFromURL(msg.hasDefects)) +
+            ((msg.hasTasks !== undefined) && _getFromURL(msg.hasTasks)) +
+            ((msg.hasTestCases !== undefined) && _getFromURL(msg.hasTestCases)) ) {
                 return;
 
         } else {
@@ -48,11 +48,12 @@ function worker() {
     }
 
     function _getFromURL(url) {
+        console.log(this.id, url)
         var getReq = new XMLHttpRequest();
         getReq.onloadend = _loadHandler;
         getReq.onabort = _abortHandler;
         getReq.ontimeout = _timeoutHandler;
-//        getReq.timeout = timeout;
+        getReq.timeout = timeout;
         getReq.withCredentials = true;
         currentState = 'Reading';
         getReq.open("GET", url + '?fetch=' + fetchFields, true);

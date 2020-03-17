@@ -75,9 +75,7 @@ Ext.define("Niks.Apps.TreeExporter", {
             text = Ext.Date.format(fieldData, this.dateFormat);
 
         //The dependencies field is a synthetic one. We identity it by the field contents
-        } else if ((fieldData.Count !== undefined) &&
-                    (fieldData.Predecessors !== undefined)
-                    (fieldData.Successors !== undefined)) {
+        } else if (fieldData.Count !== undefined) {
             text = fieldData.Count.toString();
         }
         /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
