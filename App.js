@@ -32,7 +32,7 @@ Ext.define('Niks.Apps.listExporter.app', {
 
     statics: {
         //Be aware that each thread might kick off more than one activity. Currently, it could do three for a user story.
-        MAX_THREAD_COUNT: 4,  //More memory and more network usage the higher you go.
+        MAX_THREAD_COUNT: 16,  //More memory and more network usage the higher you go.
     },
 
     _defectModel: null,
@@ -548,9 +548,7 @@ EXPORT_FIELD_LIST:
 
     //Check for end comes from every thread.
     _checkForEnd: function() {
-
         if ( gApp._allThreadsIdle()) {
-            debugger;
             if ( gApp._printCSV === 1) {
                 gApp.setLoading("Exporting CSV....");
                 gApp._exportCSV();
@@ -560,7 +558,6 @@ EXPORT_FIELD_LIST:
         else {
             gApp._kickThreads();
         }
-
     },
 
     _kickThreads: function() {

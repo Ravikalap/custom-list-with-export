@@ -48,7 +48,6 @@ function worker() {
     }
 
     function _getFromURL(url) {
-        console.log(this.id, url)
         var getReq = new XMLHttpRequest();
         getReq.onloadend = _loadHandler;
         getReq.onabort = _abortHandler;
