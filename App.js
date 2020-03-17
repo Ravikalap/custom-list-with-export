@@ -32,7 +32,7 @@ Ext.define('Niks.Apps.listExporter.app', {
 
     statics: {
         //Be aware that each thread might kick off more than one activity. Currently, it could do three for a user story.
-        MAX_THREAD_COUNT: 32,  //More memory and more network usage the higher you go.
+        MAX_THREAD_COUNT: 8,  //More memory and more network usage the higher you go.
     },
 
     _defectModel: null,

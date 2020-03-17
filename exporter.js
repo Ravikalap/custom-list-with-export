@@ -66,13 +66,21 @@ Ext.define("Niks.Apps.TreeExporter", {
         if (fieldData === null || fieldData === undefined) {
             text = '';
 
+        // we capture object types here
         } else if (fieldData._refObjectName && !fieldData.getMonth) {
             text = fieldData._refObjectName;
 
+        // Date types here
         } else if (fieldData instanceof Date) {
             text = Ext.Date.format(fieldData, this.dateFormat);
 
-        } /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
+        //The dependencies field is a synthetic one. We identity it by the field contents
+        } else if ((fieldData.Count !== undefined) &&
+                    (fieldData.Predecessors !== undefined)
+                    (fieldData.Successors !== undefined)) {
+            text = fieldData.Count.toString();
+        }
+        /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
             text = '';
         } */ else {
             var delimiter = ",",

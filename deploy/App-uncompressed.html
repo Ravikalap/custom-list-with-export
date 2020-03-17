@@ -41,7 +41,7 @@ Ext.define('Niks.Apps.listExporter.app', {
 
     statics: {
         //Be aware that each thread might kick off more than one activity. Currently, it could do three for a user story.
-        MAX_THREAD_COUNT: 32,  //More memory and more network usage the higher you go.
+        MAX_THREAD_COUNT: 8,  //More memory and more network usage the higher you go.
     },
 
     _defectModel: null,
@@ -828,13 +828,21 @@ EXPORT_FIELD_LIST:
         if (fieldData === null || fieldData === undefined) {
             text = '';
 
+        // we capture object types here
         } else if (fieldData._refObjectName && !fieldData.getMonth) {
             text = fieldData._refObjectName;
 
+        // Date types here
         } else if (fieldData instanceof Date) {
             text = Ext.Date.format(fieldData, this.dateFormat);
 
-        } /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
+        //The dependencies field is a synthetic one. We identity it by the field contents
+        } else if ((fieldData.Count !== undefined) &&
+                    (fieldData.Predecessors !== undefined)
+                    (fieldData.Successors !== undefined)) {
+            text = fieldData.Count.toString();
+        }
+        /*else if (!fieldData.match) { // not a string or object we recognize...bank it out
             text = '';
         } */ else {
             var delimiter = ",",
@@ -17980,13 +17988,6 @@ Object.defineProperty(exports, '__esModule', { value: true });
     </script>
 
 
-
-    <style type="text/css">
-        .app {
-  /* Add app styles here */
-}
-
-    </style>
 </head>
 <body>
 </body>
