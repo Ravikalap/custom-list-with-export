@@ -5,12 +5,12 @@ custom-list-with-export
 
 Looks like a normal grid (but the export - top, right) behaves faster:
 
-![alt text] (https://github.com/nikantonelli/custom-list-with-export/blob/master/images/portfolioitems.png)
+![alt text](https://github.com/nikantonelli/custom-list-with-export/blob/master/images/portfolioitems.png)
 
 
 You can choose to export child work items if you want them:
 
-![alt text] (https://github.com/nikantonelli/custom-list-with-export/blob/master/images/settings.png)
+![alt text](https://github.com/nikantonelli/custom-list-with-export/blob/master/images/settings.png)
 
 ## License
 
