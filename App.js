@@ -582,6 +582,8 @@ EXPORT_FIELD_LIST:
         var filters = gApp.down('rallygridboard').getGridOrBoard().getStore().filters.items;
         var sorters = gApp.down('rallygridboard').getGridOrBoard().getStore().sorters.items;
         var parentType = gApp.down('rallygridboard').getGridOrBoard().getStore().parentTypes[0];
+        var fields = _.pluck(gApp._getExportColumns(), "dataIndex");
+        fields = _.uniq(fields.concat(gApp.STORE_FETCH_FIELD_LIST));
 
         var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
         if (topLevelNodes.length > 0) {
@@ -591,7 +593,7 @@ EXPORT_FIELD_LIST:
                 filters: filters,
                 sorters: sorters,
                 limit: Infinity,
-                fetch: gApp.STORE_FETCH_FIELD_LIST,
+                fetch: fields,
                 autoLoad: true,
                 pageSize: 2000,
                 listeners: {
