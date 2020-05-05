@@ -471,7 +471,6 @@ EXPORT_FIELD_LIST:
     },
 
     _convertToThreadActivity: function() {
-        var me = this;
         while (gApp._runningThreads.length < gApp.self.MAX_THREAD_COUNT) {
             //Check the required amount of threads are still running
             gApp._threadCreate();
@@ -482,6 +481,7 @@ EXPORT_FIELD_LIST:
             
             gApp._processRecord(gApp._recordsToProcess.pop());
         }
+        gApp._checkForEnd();
     },
 
     _allThreadsIdle: function() {
@@ -579,10 +579,29 @@ EXPORT_FIELD_LIST:
             gApp._initialiseThread(thread);
         });
         gApp._nodes = [ gApp.WorldViewNode ];
+        var filters = gApp.down('rallygridboard').getGridOrBoard().getStore().filters.items;
+        var sorters = gApp.down('rallygridboard').getGridOrBoard().getStore().sorters.items;
+        var parentType = gApp.down('rallygridboard').getGridOrBoard().getStore().parentTypes[0];
+
         var topLevelNodes = gApp.down('rallygridboard').getGridOrBoard().getStore().getTopLevelNodes();
         if (topLevelNodes.length > 0) {
             gApp.setLoading('Fetching hierarchical data');
-            gApp._getArtifacts(topLevelNodes);
+            Ext.create('Rally.data.wsapi.Store', {
+                model: parentType,
+                filters: filters,
+                sorters: sorters,
+                limit: Infinity,
+                fetch: gApp.STORE_FETCH_FIELD_LIST,
+                autoLoad: true,
+                pageSize: 2000,
+                listeners: {
+                    load: function(store, records, success) {
+                        if (success) {
+                            gApp._getArtifacts(records);
+                        }
+                    }
+                }
+            });
         }
         else {
             Rally.ui.notify.Notifier.showWarning({ message: 'Empty Grid. Nothing to Export'});
